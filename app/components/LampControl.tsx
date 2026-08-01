@@ -279,7 +279,11 @@ export default function LampControl() {
                 {lamps.map((lamp) => (
                   <button key={lamp.id} id={`lamp-card-${lamp.id}`} className={`lamp-card anim-scale-in delay-${lamp.id} ${lamp.on ? "is-on" : ""} ${lamp.error ? "is-error" : ""}`} onClick={() => toggleLamp(lamp.id)} aria-label={`Lamp ${lamp.id} — ${lamp.on ? "ON" : "OFF"}`}>
                     {lamp.loading && <div className="lamp-loading"><div className="spinner" /></div>}
-                    <div className={`lamp-bulb ${lamp.on ? "on" : "off"}`}><BulbIcon on={lamp.on} /></div>
+                    <div className="lamp-bulb-wrap">
+                      <div className="lamp-rays" />
+                      <div className="lamp-glow-ring" />
+                      <div className={`lamp-bulb ${lamp.on ? "on" : "off"}`}><BulbIcon on={lamp.on} /></div>
+                    </div>
                     <span className="lamp-id">{lamp.id}</span>
                     <span className="lamp-label">Lamp</span>
                     <span className={`lamp-status ${lamp.on ? "on" : "off"}`}>{lamp.on ? "ON" : "OFF"}</span>
