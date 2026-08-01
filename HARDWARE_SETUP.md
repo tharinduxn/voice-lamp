@@ -1,16 +1,16 @@
-# 🔧 Lamp Voice Control — Hardware Setup Guide
+# 🔧 Oil Lamp Voice Control — Hardware Setup Guide
 
-> Step-by-step guide to control 11 physical lamps from the web app via an ESP32.
+> Step-by-step guide to light 11 physical oil lamps from the web app via an ESP32.
 
 ---
 
 ## Overview
 
 ```
-┌─────────────┐      WiFi       ┌──────────┐     GPIO      ┌──────────────┐      AC       ┌──────┐
-│  Web App    │  ──────────►   │  ESP32   │  ──────────►  │ Relay Board  │  ──────────► │ Lamps │
-│  (Browser)  │   HTTP GET     │ (Server) │   HIGH/LOW    │  (11-ch)     │   Switch     │ (×11) │
-└─────────────┘                └──────────┘               └──────────────┘              └──────┘
+┌─────────────┐      WiFi       ┌──────────┐     GPIO      ┌──────────────────┐    Power     ┌────────────────────────┐
+│  Web App    │  ──────────►   │  ESP32   │  ──────────►  │ 16-Channel Relay │  ──────────► │ Nichrome Wire (×11)    │
+│  (Browser)  │   HTTP GET     │ (Server) │   HIGH/LOW    │ (11 channels used)│   Switch     │ (Lights 11 Oil Lamps)  │
+└─────────────┘                └──────────┘               └──────────────────┘              └────────────────────────┘
 ```
 
 ---
@@ -21,11 +21,11 @@
 |------|-----|-------|
 | **ESP32 DevKit** (WROOM-32 or ESP32-S3) | 1 | Any variant works |
 | **16-Channel Relay Module** (5V, optocoupler isolated) | 1 | Only 11 channels used |
-| **AC Bulbs / Lamps** (220V) | 11 | Any standard bulbs |
-| **Lamp holders** (E27 screw type) | 11 | Match your bulb type |
+| **Nichrome Wire** | 11 | Positioned at the wick of each oil lamp |
+| **Oil Lamps** | 11 | Traditional oil lamps |
 | **Jumper wires** (male-to-female, 20cm) | 15+ | For ESP32 → Relay |
 | **5V 2A USB power supply** (for ESP32) | 1 | Micro-USB or USB-C |
-| **AC cable / extension cord** | as needed | For mains power |
+| **High Current DC Power Supply** | 1 | For heating the nichrome wires (e.g., 12V 10A+ depending on wire specs) |
 
 ---
 
@@ -33,8 +33,8 @@
 
 ### GPIO → Relay Pin Mapping
 
-| Lamp | ESP32 GPIO | Relay Input |
-|------|-----------|-------------|
+| Oil Lamp | ESP32 GPIO | Relay Input |
+|----------|-----------|-------------|
 | 1 | GPIO 2 | IN1 |
 | 2 | GPIO 4 | IN2 |
 | 3 | GPIO 5 | IN3 |
@@ -67,21 +67,20 @@ GND     ──────────────►  GND
 5V (VIN)──────────────►  VCC
 ```
 
-### Relay → Lamp (AC Side)
+### Relay → Nichrome Wire (Power Side)
 
 Each relay channel has 3 screw terminals: **COM**, **NO** (Normally Open), **NC** (Normally Closed).
 
 ```
-Mains LIVE ──────► COM (relay)
-                    NO (relay) ──────► Lamp terminal 1
-Mains NEUTRAL ──────────────────────► Lamp terminal 2
+DC Power LIVE (+) ──────► COM (relay)
+                           NO (relay) ──────► Nichrome Wire terminal 1
+DC Power GND (-)  ──────────────────────────► Nichrome Wire terminal 2
 ```
 
-> ⚠️ **DANGER: You are working with 220V AC mains electricity.**
-> - Never touch exposed wires when plugged in
-> - Use properly insulated connectors
-> - Have someone experienced help with AC wiring
-> - Use a main switch/breaker before the relay board
+> ⚠️ **DANGER: Nichrome wire gets extremely hot!**
+> - Make sure the wire is securely positioned near the wick.
+> - High currents are required; use appropriately rated thick wires from the power supply to the relay and nichrome.
+> - Ensure your DC power supply can handle the load if multiple lamps are lit simultaneously.
 
 ---
 
@@ -133,7 +132,7 @@ void handleLamp() {
       lampStates[i] = turnOn;
       digitalWrite(lampPins[i], turnOn ? HIGH : LOW);
     }
-    server.send(200, "text/plain", turnOn ? "All lamps ON" : "All lamps OFF");
+    server.send(200, "text/plain", turnOn ? "All lamps lit" : "All lamps off");
     Serial.println(turnOn ? "ALL ON" : "ALL OFF");
   } else {
     int id = idStr.toInt();
@@ -144,8 +143,8 @@ void handleLamp() {
     int idx = id - 1;
     lampStates[idx] = turnOn;
     digitalWrite(lampPins[idx], turnOn ? HIGH : LOW);
-    server.send(200, "text/plain", "Lamp " + String(id) + (turnOn ? " ON" : " OFF"));
-    Serial.println("Lamp " + String(id) + (turnOn ? " ON" : " OFF"));
+    server.send(200, "text/plain", "Oil Lamp " + String(id) + (turnOn ? " lit" : " off"));
+    Serial.println("Oil Lamp " + String(id) + (turnOn ? " lit" : " off"));
   }
 }
 
@@ -180,7 +179,7 @@ void setup() {
   server.on("/lamp", HTTP_GET, handleLamp);
   server.on("/lamp", HTTP_OPTIONS, handleOptions);
   server.on("/", []() {
-    server.send(200, "text/plain", "Duothan Lamp Controller OK");
+    server.send(200, "text/plain", "Duothan Oil Lamp Controller OK");
   });
 
   server.begin();
@@ -251,25 +250,11 @@ npx vercel
 
 ### Test Checklist
 
-- [ ] Click **Lamp 1** card → relay clicks, lamp turns on
-- [ ] Click again → lamp turns off
-- [ ] Click **All ON** → all 11 lamps light up
-- [ ] Click **All OFF** → all lamps turn off
-- [ ] Tap the **mic button** → say "light lamp three" → lamp 3 turns on
-- [ ] Say "turn off all lamps" → all lamps turn off
-
----
-
-## Step 7 — Event Day Checklist
-
-1. Set up lamps and relay board at the venue
-2. Power on the ESP32 via USB
-3. Connect ESP32 + your device to the **same WiFi**
-4. Check Serial Monitor for the ESP32 IP address
-5. Open the web app, enter the IP
-6. **Test all 11 lamps** before the event starts
-7. Test voice commands in the venue (check mic works with background noise)
-8. Keep the laptop plugged in and screen awake
+- [ ] Click **Lamp 1** card → relay clicks, nichrome wire heats up, oil lamp lights.
+- [ ] Click **All ON** → all 11 relays click and heat up.
+- [ ] Click **All OFF** → all relays release, nichrome cools.
+- [ ] Tap the **mic button** → say "light oil lamp three" → lamp 3 turns on
+- [ ] Say "turn off all oil lamps" → all relays turn off
 
 ---
 
@@ -278,8 +263,8 @@ npx vercel
 | Problem | Fix |
 |---------|-----|
 | "Failed to reach ESP32" toast | Wrong IP, or devices not on same WiFi |
-| Relay clicks but lamp stays off | Check AC wiring — use COM + NO terminals |
-| Lamp stays on when it should be off | You might be wired to NC instead of NO |
+| Relay clicks but nichrome won't heat | Check DC wiring — use COM + NO terminals |
+| Wire heats when it should be off | You might be wired to NC instead of NO |
 | Voice not working | Use **Chrome** — Firefox/Safari don't support Web Speech API |
 | Mic permission denied | Click the lock icon in the URL bar → Allow Microphone |
 | ESP32 keeps disconnecting | Use a stable 5V power supply, not a weak USB port |
@@ -333,4 +318,4 @@ The web app sends these HTTP requests to the ESP32:
 | Turn off lamp 7 | `GET http://<IP>/lamp?id=7&state=off` |
 | All lamps on | `GET http://<IP>/lamp?id=all&state=on` |
 | All lamps off | `GET http://<IP>/lamp?id=all&state=off` |
-| Health check | `GET http://<IP>/` → returns `Duothan Lamp Controller OK` |
+| Health check | `GET http://<IP>/` → returns `Duothan Oil Lamp Controller OK` |

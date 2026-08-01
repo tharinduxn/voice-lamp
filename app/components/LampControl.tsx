@@ -33,8 +33,8 @@ const WORD_TO_NUM: Record<string, number> = {
 function parseCommand(text: string): ParsedCommand | null {
   const t = text.toLowerCase().trim();
   let action: "on" | "off" | null = null;
-  if (/\b(turn\s*off|switch\s*off|shut\s*off|off|dim|kill|disable|deactivate|close|dark|darken|unlight)\b/.test(t)) action = "off";
-  else if (/\b(turn\s*on|switch\s*on|light|lights|on|enable|activate|open|bright|brighten|illuminate)\b/.test(t)) action = "on";
+  if (/\b(turn\s*off|switch\s*off|shut\s*off|off|dim|kill|disable|deactivate|close|dark|darken|unlight|extinguish)\b/.test(t)) action = "off";
+  else if (/\b(turn\s*on|switch\s*on|light|lights|on|enable|activate|open|bright|brighten|illuminate|fire|ignite)\b/.test(t)) action = "on";
   if (!action) return null;
   if (/\b(all|every|everything|each)\b/.test(t)) return { action, id: "all" };
   const digitMatch = t.match(/\b(1[01]|[1-9])\b/);
@@ -56,9 +56,9 @@ const MicOffIcon = ({ size = 40 }: { size?: number }) => (
     <path d="M17 16.95A7 7 0 0 1 5 12" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="8" y1="22" x2="16" y2="22" />
   </svg>
 );
-const BulbIcon = ({ on }: { on: boolean }) => (
+const FlameIcon = ({ on }: { on: boolean }) => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth={on ? 1 : 2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" />
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
   </svg>
 );
 const AlertIcon = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>);
@@ -194,7 +194,7 @@ export default function LampControl() {
       <header className="header-bar" style={{ position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <span className="header-subtitle">DUOTHAN 6.0</span>
-          <h1 className="header-title">Lamp Control</h1>
+          <h1 className="header-title">Oil Lamp Control</h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <div className={`connection-dot ${connectionStatus}`} />
@@ -245,7 +245,7 @@ export default function LampControl() {
                   </div>
 
                   <div className={`transcript-area ${transcript ? "has-text" : ""}`}>
-                    {transcript || (isListening ? '"Light lamp three" or "turn off all lamps"...' : "Voice transcript appears here")}
+                    {transcript || (isListening ? '"Light oil lamp three" or "turn off all oil lamps"...' : "Voice transcript appears here")}
                   </div>
 
                   {lastCommand && (
@@ -261,7 +261,7 @@ export default function LampControl() {
 
               {showTextInput && (
                 <form onSubmit={handleTextSubmit} style={{ display: "flex", gap: "0.5rem" }}>
-                  <input id="text-command-input" type="text" className="text-command-input" placeholder='"light lamp 5" or "turn off all"' value={textCommand} onChange={(e) => setTextCommand(e.target.value)} />
+                  <input id="text-command-input" type="text" className="text-command-input" placeholder='"light oil lamp 5" or "turn off all"' value={textCommand} onChange={(e) => setTextCommand(e.target.value)} />
                   <button type="submit" className="btn-action btn-all-on" style={{ flexShrink: 0 }}>Send</button>
                 </form>
               )}
@@ -270,7 +270,7 @@ export default function LampControl() {
             {/* Lamp Array */}
             <div className="anim-fade-up" style={{ display: "flex", flexDirection: "column", gap: "0.85rem", animationDelay: "0.2s" }}>
               <div className="lamp-section-header">
-                <span className="section-label">Lamp Array</span>
+                <span className="section-label">Oil Lamp Array</span>
                 <div className="neon-divider" style={{ width: "30px" }} />
                 <span className="duothan-badge">{onCount}/11 Active</span>
               </div>
@@ -279,9 +279,13 @@ export default function LampControl() {
                 {lamps.map((lamp) => (
                   <button key={lamp.id} id={`lamp-card-${lamp.id}`} className={`lamp-card anim-scale-in delay-${lamp.id} ${lamp.on ? "is-on" : ""} ${lamp.error ? "is-error" : ""}`} onClick={() => toggleLamp(lamp.id)} aria-label={`Lamp ${lamp.id} — ${lamp.on ? "ON" : "OFF"}`}>
                     {lamp.loading && <div className="lamp-loading"><div className="spinner" /></div>}
-                    <div className={`lamp-bulb ${lamp.on ? "on" : "off"}`}><BulbIcon on={lamp.on} /></div>
+                    <div className="lamp-bulb-wrap">
+                      <div className="lamp-rays" />
+                      <div className="lamp-glow-ring" />
+                      <div className={`lamp-bulb ${lamp.on ? "on" : "off"}`}><FlameIcon on={lamp.on} /></div>
+                    </div>
                     <span className="lamp-id">{lamp.id}</span>
-                    <span className="lamp-label">Lamp</span>
+                    <span className="lamp-label">Oil Lamp</span>
                     <span className={`lamp-status ${lamp.on ? "on" : "off"}`}>{lamp.on ? "ON" : "OFF"}</span>
                   </button>
                 ))}
@@ -316,7 +320,7 @@ export default function LampControl() {
                 </span>
               </div>
               <div className="status-row">
-                <span>Active lamps</span>
+                <span>Active oil lamps</span>
                 <span className="status-row-value" style={{ color: "var(--text-primary)" }}>{onCount} / 11</span>
               </div>
               <div className="stat-bar-track">
@@ -336,10 +340,10 @@ export default function LampControl() {
                 <ChevronIcon />
               </summary>
               <div className="reference-list">
-                <span>&quot;Light lamp three&quot; → <b>ON #3</b></span>
-                <span>&quot;Turn on lamp 7&quot; → <b>ON #7</b></span>
-                <span>&quot;Turn off lamp five&quot; → <b>OFF #5</b></span>
-                <span>&quot;Light all lamps&quot; → <b>ON ALL</b></span>
+                <span>&quot;Light oil lamp three&quot; → <b>ON #3</b></span>
+                <span>&quot;Turn on oil lamp 7&quot; → <b>ON #7</b></span>
+                <span>&quot;Turn off oil lamp five&quot; → <b>OFF #5</b></span>
+                <span>&quot;Light all oil lamps&quot; → <b>ON ALL</b></span>
                 <span>&quot;Turn off all&quot; → <b>OFF ALL</b></span>
                 <span>&quot;Switch off eleven&quot; → <b>OFF #11</b></span>
               </div>
