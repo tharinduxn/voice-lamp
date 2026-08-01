@@ -19,9 +19,9 @@ const protestStrike = Protest_Strike({
 });
 
 export const metadata: Metadata = {
-  title: "DUOTHAN 6.0 — Oil Lamp Voice Control",
+  title: "DUOTHAN 6.0 — PAHAN Voice Control",
   description:
-    "Voice-controlled oil lamp panel for Duothan 6.0 live event. Controls 11 physical oil lamps over WiFi via ESP32 and relays.",
+    "Voice-controlled PAHAN panel for Duothan 6.0 live event. Controls 11 physical traditional pahans over WiFi via ESP32 and relays.",
 };
 
 export default function RootLayout({
