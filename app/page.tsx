@@ -1,5 +1,5 @@
-import LampControl from "./components/LampControl";
+import GuestControl from "./components/GuestControl";
 
 export default function Home() {
-  return <LampControl />;
+  return <GuestControl />;
 }

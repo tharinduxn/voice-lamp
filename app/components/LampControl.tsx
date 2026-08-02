@@ -76,6 +76,12 @@ export default function LampControl() {
   const [esp32Ip, setEsp32Ip] = useState("");
   const [ipDraft, setIpDraft] = useState("");
   const [editingIp, setEditingIp] = useState(false);
+  
+  useEffect(() => {
+    const saved = localStorage.getItem("duothan_esp32_ip");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (saved) setEsp32Ip(saved);
+  }, []);
   const [lamps, setLamps] = useState<LampState[]>(Array.from({ length: 11 }, (_, i) => ({ id: i + 1, on: false, loading: false, error: false })));
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -130,6 +136,7 @@ export default function LampControl() {
     const Ctor: SpeechRecognitionConstructor | undefined =
       (window as unknown as { SpeechRecognition?: SpeechRecognitionConstructor }).SpeechRecognition ||
       (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionConstructor }).webkitSpeechRecognition;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!Ctor) { setSpeechSupported(false); return; }
 
     const recognition = new Ctor();
@@ -175,7 +182,7 @@ export default function LampControl() {
   const showTextInput = !speechSupported || micPermission === "denied";
 
   const openIpEditor = useCallback(() => { setIpDraft(esp32Ip); setEditingIp(true); }, [esp32Ip]);
-  const saveIp = useCallback((e: React.FormEvent) => { e.preventDefault(); setEsp32Ip(ipDraft.trim()); setEditingIp(false); }, [ipDraft]);
+  const saveIp = useCallback((e: React.FormEvent) => { e.preventDefault(); const val = ipDraft.trim(); setEsp32Ip(val); localStorage.setItem("duothan_esp32_ip", val); setEditingIp(false); }, [ipDraft]);
 
   /* ════════════════════════════════════════════
      RENDER
@@ -183,6 +190,7 @@ export default function LampControl() {
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       {/* Ambient layers */}
+      <img src="/samurai.png" className="samurai-bg" alt="Cyber Samurai" />
       <div className="bg-ambient" />
       <div className="grid-overlay" />
       <div className="scanline-overlay" />
@@ -194,7 +202,7 @@ export default function LampControl() {
       <header className="header-bar" style={{ position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <span className="header-subtitle">DUOTHAN 6.0</span>
-          <h1 className="header-title">Oil Lamp Control</h1>
+          <h1 className="header-title">PAHAN Control</h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <div className={`connection-dot ${connectionStatus}`} />
@@ -245,7 +253,7 @@ export default function LampControl() {
                   </div>
 
                   <div className={`transcript-area ${transcript ? "has-text" : ""}`}>
-                    {transcript || (isListening ? '"Light oil lamp three" or "turn off all oil lamps"...' : "Voice transcript appears here")}
+                    {transcript || (isListening ? '"Light pahan three" or "turn off all pahans"...' : "Voice transcript appears here")}
                   </div>
 
                   {lastCommand && (
@@ -261,7 +269,7 @@ export default function LampControl() {
 
               {showTextInput && (
                 <form onSubmit={handleTextSubmit} style={{ display: "flex", gap: "0.5rem" }}>
-                  <input id="text-command-input" type="text" className="text-command-input" placeholder='"light oil lamp 5" or "turn off all"' value={textCommand} onChange={(e) => setTextCommand(e.target.value)} />
+                  <input id="text-command-input" type="text" className="text-command-input" placeholder='"light pahan 5" or "turn off all"' value={textCommand} onChange={(e) => setTextCommand(e.target.value)} />
                   <button type="submit" className="btn-action btn-all-on" style={{ flexShrink: 0 }}>Send</button>
                 </form>
               )}
@@ -270,7 +278,7 @@ export default function LampControl() {
             {/* Lamp Array */}
             <div className="anim-fade-up" style={{ display: "flex", flexDirection: "column", gap: "0.85rem", animationDelay: "0.2s" }}>
               <div className="lamp-section-header">
-                <span className="section-label">Oil Lamp Array</span>
+                <span className="section-label">PAHAN Array</span>
                 <div className="neon-divider" style={{ width: "30px" }} />
                 <span className="duothan-badge">{onCount}/11 Active</span>
               </div>
@@ -285,7 +293,7 @@ export default function LampControl() {
                       <div className={`lamp-bulb ${lamp.on ? "on" : "off"}`}><FlameIcon on={lamp.on} /></div>
                     </div>
                     <span className="lamp-id">{lamp.id}</span>
-                    <span className="lamp-label">Oil Lamp</span>
+                    <span className="lamp-label">PAHAN</span>
                     <span className={`lamp-status ${lamp.on ? "on" : "off"}`}>{lamp.on ? "ON" : "OFF"}</span>
                   </button>
                 ))}
@@ -320,7 +328,7 @@ export default function LampControl() {
                 </span>
               </div>
               <div className="status-row">
-                <span>Active oil lamps</span>
+                <span>Active pahans</span>
                 <span className="status-row-value" style={{ color: "var(--text-primary)" }}>{onCount} / 11</span>
               </div>
               <div className="stat-bar-track">
@@ -340,10 +348,10 @@ export default function LampControl() {
                 <ChevronIcon />
               </summary>
               <div className="reference-list">
-                <span>&quot;Light oil lamp three&quot; → <b>ON #3</b></span>
-                <span>&quot;Turn on oil lamp 7&quot; → <b>ON #7</b></span>
-                <span>&quot;Turn off oil lamp five&quot; → <b>OFF #5</b></span>
-                <span>&quot;Light all oil lamps&quot; → <b>ON ALL</b></span>
+                <span>&quot;Light pahan three&quot; → <b>ON #3</b></span>
+                <span>&quot;Turn on pahan 7&quot; → <b>ON #7</b></span>
+                <span>&quot;Turn off pahan five&quot; → <b>OFF #5</b></span>
+                <span>&quot;Light all pahans&quot; → <b>ON ALL</b></span>
                 <span>&quot;Turn off all&quot; → <b>OFF ALL</b></span>
                 <span>&quot;Switch off eleven&quot; → <b>OFF #11</b></span>
               </div>
