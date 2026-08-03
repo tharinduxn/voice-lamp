@@ -142,6 +142,28 @@ export default function LampControl() {
     }
   }, [sendCommand]);
 
+  // Connection Ping Check
+  useEffect(() => {
+    if (!esp32Ip) {
+      setConnectionStatus("unknown");
+      return;
+    }
+    const checkConnection = async () => {
+      const baseUrl = esp32Ip.trim();
+      const url = baseUrl.startsWith("http") ? baseUrl : `http://${baseUrl}`;
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2500);
+        await fetch(`${url}/`, { method: "GET", mode: "no-cors", signal: controller.signal });
+        clearTimeout(timeout);
+        setConnectionStatus("connected");
+      } catch {
+        setConnectionStatus("disconnected");
+      }
+    };
+    checkConnection();
+  }, [esp32Ip]);
+
   // Speech Recognition setup
   useEffect(() => {
     const Ctor: SpeechRecognitionConstructor | undefined =
@@ -299,20 +321,48 @@ export default function LampControl() {
                 <span className="duothan-badge">{onCount}/11 Active</span>
               </div>
 
-              <div className="lamp-grid">
-                {lamps.map((lamp) => (
-                  <button key={lamp.id} id={`lamp-card-${lamp.id}`} className={`lamp-card anim-scale-in delay-${lamp.id} ${lamp.on ? "is-on" : ""} ${lamp.error ? "is-error" : ""}`} onClick={() => toggleLamp(lamp.id)} aria-label={`Lamp ${lamp.id} — ${lamp.on ? "ON" : "OFF"}`}>
-                    {lamp.loading && <div className="lamp-loading"><div className="spinner" /></div>}
-                    <div className="lamp-bulb-wrap">
-                      <div className="lamp-rays" />
-                      <div className="lamp-glow-ring" />
-                      <div className={`lamp-bulb ${lamp.on ? "on" : "off"}`}><FlameIcon on={lamp.on} /></div>
-                    </div>
-                    <span className="lamp-id">{lamp.id}</span>
-                    <span className="lamp-label">PAHAN</span>
-                    <span className={`lamp-status ${lamp.on ? "on" : "off"}`}>{lamp.on ? "ON" : "OFF"}</span>
-                  </button>
-                ))}
+              <div style={{ position: "relative", width: "100%", maxWidth: "450px", margin: "2rem auto" }}>
+                <div style={{ width: "100%", paddingBottom: "100%" }} />
+                <div style={{ position: "absolute", inset: 0 }}>
+                  {/* Decorative Rings in Center */}
+                  <div style={{ position: "absolute", inset: "25%", border: "1px dashed rgba(228, 16, 82, 0.25)", borderRadius: "50%", animation: "spin-slow 25s linear infinite", pointerEvents: "none" }} />
+                  <div style={{ position: "absolute", inset: "35%", border: "1px solid rgba(228, 16, 82, 0.1)", borderTopColor: "rgba(228, 16, 82, 0.5)", borderRadius: "50%", animation: "spin-slow-reverse 15s linear infinite", pointerEvents: "none" }} />
+                  
+                  {lamps.map((lamp, i) => {
+                    const angle = (i / lamps.length) * 2 * Math.PI - Math.PI / 2;
+                    const radiusPercent = 42; // percentage of container size
+                    const x = Math.cos(angle) * radiusPercent;
+                    const y = Math.sin(angle) * radiusPercent;
+
+                    return (
+                      <div 
+                        key={lamp.id}
+                        style={{ 
+                          position: "absolute", 
+                          left: `calc(50% + ${x}%)`, 
+                          top: `calc(50% + ${y}%)`, 
+                          transform: "translate(-50%, -50%)",
+                          zIndex: lamp.on ? 10 : 5
+                        }}
+                      >
+                        <button 
+                          id={`lamp-card-${lamp.id}`} 
+                          className={`clean-lamp-btn anim-scale-in delay-${lamp.id} ${lamp.on ? "is-on" : ""} ${lamp.error ? "is-error" : ""}`} 
+                          onClick={() => toggleLamp(lamp.id)} 
+                          aria-label={`Lamp ${lamp.id} — ${lamp.on ? "ON" : "OFF"}`}
+                        >
+                          <div className="lamp-bulb-wrap">
+                            {lamp.loading && <div className="lamp-loading" style={{ borderRadius: "50%", zIndex: 10 }}><div className="spinner" style={{ width: "18px", height: "18px" }} /></div>}
+                            <div className="lamp-rays" />
+                            <div className="lamp-glow-ring" />
+                            <div className={`lamp-bulb ${lamp.on ? "on" : "off"}`}><FlameIcon on={lamp.on} /></div>
+                          </div>
+                          <span className="lamp-id">{lamp.id}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -332,7 +382,7 @@ export default function LampControl() {
               ) : (
                 <form className="ip-edit-row" onSubmit={saveIp}>
                   <input autoFocus type="text" className="config-input" placeholder="192.168.1.100" value={ipDraft} onChange={(e) => setIpDraft(e.target.value)} onBlur={saveIp} />
-                  <button type="submit" className="btn-action btn-all-on btn-sm" style={{ flexShrink: 0 }}>Save</button>
+                  <button type="submit" className="btn-action btn-all-on btn-sm" style={{ flexShrink: 0, padding: "0.55rem 0.6rem" }}>Enter ↵</button>
                 </form>
               )}
 
