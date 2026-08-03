@@ -32,6 +32,7 @@ const WORD_TO_NUM: Record<string, number> = {
 /* ── Command parser ── */
 function parseCommand(text: string): ParsedCommand | null {
   const t = text.toLowerCase().trim();
+  const normalizedText = t.replace(/[.,!?]/g, "");
   let action: "on" | "off" | null = null;
   if (/\b(turn\s*off|switch\s*off|shut\s*off|off|dim|kill|disable|deactivate|close|dark|darken|unlight|extinguish)\b/.test(t)) action = "off";
   else if (/\b(turn\s*on|switch\s*on|light|lights|on|enable|activate|open|bright|brighten|illuminate|fire|ignite)\b/.test(t)) action = "on";
@@ -39,7 +40,7 @@ function parseCommand(text: string): ParsedCommand | null {
   if (/\b(all|every|everything|each)\b/.test(t)) return { action, id: "all" };
   const digitMatch = t.match(/\b(1[01]|[1-9])\b/);
   if (digitMatch) { const num = parseInt(digitMatch[1], 10); if (num >= 1 && num <= 11) return { action, id: num }; }
-  for (const word of t.split(/\s+/)) { if (WORD_TO_NUM[word] !== undefined) return { action, id: WORD_TO_NUM[word] }; }
+  for (const word of normalizedText.split(/\s+/)) { if (WORD_TO_NUM[word] !== undefined) return { action, id: WORD_TO_NUM[word] }; }
   return null;
 }
 
@@ -81,6 +82,7 @@ export default function GuestControl() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const toastIdRef = useRef(0);
   const restartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commandBufferRef = useRef("");
 
   const addToast = useCallback((type: "error" | "success", message: string) => {
     const id = ++toastIdRef.current;
@@ -113,8 +115,17 @@ export default function GuestControl() {
   }, [esp32Ip, addToast]);
 
   const processTranscript = useCallback((text: string) => {
-    const cmd = parseCommand(text);
-    if (cmd) { setLastCommand(cmd); sendCommand(cmd.id, cmd.action); }
+    if (text) {
+      commandBufferRef.current = (commandBufferRef.current + " " + text).trim();
+      const words = commandBufferRef.current.split(/\s+/);
+      if (words.length > 10) commandBufferRef.current = words.slice(-10).join(" ");
+    }
+    const cmd = parseCommand(commandBufferRef.current);
+    if (cmd) { 
+      setLastCommand(cmd); 
+      sendCommand(cmd.id, cmd.action); 
+      commandBufferRef.current = ""; 
+    }
   }, [sendCommand]);
 
   // Speech Recognition setup
@@ -153,7 +164,7 @@ export default function GuestControl() {
   const toggleListening = useCallback(() => {
     const rec = recognitionRef.current; if (!rec) return;
     if (isListening) { rec.stop(); setIsListening(false); if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current); }
-    else { setTranscript(""); setLastCommand(null); try { rec.start(); setIsListening(true); setMicPermission("granted"); } catch { addToast("error", "Could not start speech recognition."); } }
+    else { setTranscript(""); setLastCommand(null); commandBufferRef.current = ""; try { rec.start(); setIsListening(true); setMicPermission("granted"); } catch { addToast("error", "Could not start speech recognition."); } }
   }, [isListening, addToast]);
 
   /* ════════════════════════════════════════════
