@@ -132,6 +132,28 @@ export default function GuestControl() {
     }
   }, [sendCommand]);
 
+  // Connection Ping Check
+  useEffect(() => {
+    if (!esp32Ip) {
+      setConnectionStatus("unknown");
+      return;
+    }
+    const checkConnection = async () => {
+      const baseUrl = esp32Ip.trim();
+      const url = baseUrl.startsWith("http") ? baseUrl : `http://${baseUrl}`;
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2500);
+        await fetch(`${url}/`, { method: "GET", mode: "no-cors", signal: controller.signal });
+        clearTimeout(timeout);
+        setConnectionStatus("connected");
+      } catch {
+        setConnectionStatus("disconnected");
+      }
+    };
+    checkConnection();
+  }, [esp32Ip]);
+
   // Speech Recognition setup
   useEffect(() => {
     const Ctor: SpeechRecognitionConstructor | undefined =

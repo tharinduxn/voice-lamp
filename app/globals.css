@@ -1417,3 +1417,38 @@ body {
     font-size: 0.75rem;
   }
 }
+/* ── Clean Lamp Button (Admin & Guest) ── */
+.clean-lamp-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius-lg);
+  transition: transform 0.2s;
+  position: relative;
+}
+.clean-lamp-btn:hover {
+  transform: scale(1.05);
+}
+.clean-lamp-btn:active {
+  transform: scale(0.95);
+}
+.clean-lamp-btn.is-on .lamp-glow-ring {
+  border-color: rgba(228, 16, 82, 0.3);
+  box-shadow: 0 0 16px rgba(228, 16, 82, 0.2);
+  animation: ring-pulse 2.5s ease-in-out infinite;
+}
+.clean-lamp-btn.is-on .lamp-rays {
+  opacity: 1;
+}
+.clean-lamp-btn.is-on .lamp-id {
+  color: var(--accent-primary);
+  text-shadow: 0 0 10px rgba(228, 16, 82, 0.6);
+}
+.clean-lamp-btn.is-error {
+  animation: combat-shake 0.4s ease-in-out;
+}
