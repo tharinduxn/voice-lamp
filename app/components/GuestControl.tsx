@@ -66,17 +66,21 @@ export default function GuestControl() {
   const [esp32Ip, setEsp32Ip] = useState("");
   
   useEffect(() => {
-    const saved = localStorage.getItem("duothan_esp32_ip");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (saved) setEsp32Ip(saved);
+    const handleStorage = () => {
+      const saved = localStorage.getItem("duothan_esp32_ip");
+      if (saved) setEsp32Ip(saved);
+    };
+    handleStorage();
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
   const [lamps, setLamps] = useState<LampState[]>(Array.from({ length: 11 }, (_, i) => ({ id: i + 1, on: false, loading: false, error: false })));
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [, setLastCommand] = useState<ParsedCommand | null>(null);
   const [speechSupported, setSpeechSupported] = useState(true);
-  const [, setMicPermission] = useState<"granted" | "denied" | "unknown">("unknown");
-  const [, setToasts] = useState<Toast[]>([]);
+  const [micPermission, setMicPermission] = useState<"granted" | "denied" | "unknown">("unknown");
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<"connected" | "disconnected" | "unknown">("unknown");
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -149,7 +153,7 @@ export default function GuestControl() {
     };
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       if (event.error === "not-allowed") { setMicPermission("denied"); setIsListening(false); addToast("error", "Microphone access denied."); }
-      else if (event.error !== "no-speech") addToast("error", `Speech error: ${event.error}`);
+      else if (event.error !== "no-speech") { setIsListening(false); addToast("error", `Speech error: ${event.error}`); }
     };
     recognition.onend = () => {
       setIsListening((current) => {
@@ -180,6 +184,16 @@ export default function GuestControl() {
       
       {/* ── GUEST LAYOUT ── */}
       <main className="guest-layout">
+        
+        {/* Toasts */}
+        <div style={{ position: "fixed", top: "5rem", right: "1rem", zIndex: 100, display: "flex", flexDirection: "column", gap: "0.5rem", maxWidth: "360px" }}>
+          {toasts.map((t) => (
+            <div key={t.id} className={t.type === "error" ? "error-banner" : "success-banner"}>
+              {t.type === "error" ? "⚠" : "✓"} {t.message}
+            </div>
+          ))}
+        </div>
+
         {/* ── BRANDING ── */}
         <div className="guest-branding">
           <div className="guest-branding-text">
@@ -199,7 +213,7 @@ export default function GuestControl() {
           <div className="guest-status-pill">
             <div className={`connection-dot ${connectionStatus}`} style={{ width: "14px", height: "14px" }} />
             <span className={`guest-status-text ${connectionStatus}`}>
-              {connectionStatus === "connected" ? "System Online" : connectionStatus === "disconnected" ? "System Offline" : "Connecting..."}
+              {connectionStatus === "connected" ? "System Online" : connectionStatus === "disconnected" ? "System Offline" : "System Standby"}
             </span>
           </div>
         </div>
