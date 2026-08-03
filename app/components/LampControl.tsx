@@ -28,6 +28,29 @@ export default function LampControl() {
   const [ipDraft, setIpDraft] = useState("");
   const [editingIp, setEditingIp] = useState(false);
   
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordDraft, setPasswordDraft] = useState("");
+  const [authError, setAuthError] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("duothan_admin_auth") === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordDraft === "tharinduxn") {
+      setIsAuthenticated(true);
+      sessionStorage.setItem("duothan_admin_auth", "true");
+      setAuthError(false);
+    } else {
+      setAuthError(true);
+      setPasswordDraft("");
+    }
+  };
+  
   useEffect(() => {
     const saved = localStorage.getItem("duothan_esp32_ip");
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -102,6 +125,40 @@ export default function LampControl() {
   /* ════════════════════════════════════════════
      RENDER
      ════════════════════════════════════════════ */
+  if (!isAuthenticated) {
+    return (
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+        {/* Ambient layers */}
+        <img src="/samurai.png" className="samurai-bg" alt="Cyber Samurai" style={{ filter: "blur(6px) brightness(0.25)" }} />
+        <div className="bg-ambient" />
+        <div className="grid-overlay" />
+        <div className="scanline-overlay" />
+        
+        <form onSubmit={handleLogin} className="anim-fade-up" style={{ zIndex: 10, background: "var(--card-bg)", padding: "2.5rem 2rem", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", display: "flex", flexDirection: "column", gap: "1rem", width: "90%", maxWidth: "380px", boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
+          <div style={{ textAlign: "center", marginBottom: "0.5rem" }}>
+            <h2 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "2px" }}>SYSTEM LOGIN</h2>
+            <p style={{ color: "var(--accent-primary)", fontSize: "0.8rem", marginTop: "0.4rem", textTransform: "uppercase", letterSpacing: "1px" }}>Admin authorization required</p>
+          </div>
+          
+          <input 
+            type="password" 
+            autoFocus
+            placeholder="Enter password..." 
+            className="config-input" 
+            value={passwordDraft} 
+            onChange={(e) => { setPasswordDraft(e.target.value); setAuthError(false); }}
+            style={{ width: "100%", borderColor: authError ? "var(--accent-red-error)" : "var(--border-color)", padding: "0.8rem 1rem", fontSize: "1rem", textAlign: "center", letterSpacing: "0.2em" }}
+          />
+          {authError && <span className="anim-shake" style={{ color: "var(--accent-red-error)", fontSize: "0.8rem", textAlign: "center", fontWeight: 600 }}>⚠ ACCESS DENIED</span>}
+          
+          <button type="submit" className="btn-action btn-all-on" style={{ marginTop: "1rem", padding: "0.8rem", fontSize: "1rem" }}>
+            AUTHORIZE
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       {/* Ambient layers */}
