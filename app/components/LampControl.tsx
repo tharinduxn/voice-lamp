@@ -84,6 +84,13 @@ export default function LampControl() {
       setLamps((prev) => prev.map((l) => (lampId === "all" || l.id === lampId) ? { ...l, loading: false } : l));
       setConnectionStatus("connected");
       addToast("success", `Lamp ${lampId === "all" ? "ALL" : lampId} → ${state.toUpperCase()}`);
+
+      // Auto-turn off after 5 seconds (fire time) to prevent nichrome wire burnout
+      if (state === "on") {
+        setTimeout(() => {
+          sendCommand(lampId, "off");
+        }, 5000);
+      }
     } catch {
       setLamps((prev) => prev.map((l) => (lampId === "all" || l.id === lampId) ? { ...l, on: state !== "on", loading: false, error: true } : l));
       setConnectionStatus("disconnected");
