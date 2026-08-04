@@ -109,6 +109,8 @@ const char* password = "YOUR_WIFI_PASS";
 // ──── GPIO pins for lamps 1–11 ────
 const int lampPins[11] = {2, 4, 5, 12, 13, 14, 15, 16, 17, 18, 19};
 bool lampStates[11]    = {false};
+unsigned long lampOnTimes[11] = {0};
+const unsigned long FIRE_TIME_MS = 5000; // 5 seconds auto-off time
 
 WebServer server(80);
 
@@ -131,6 +133,7 @@ void handleLamp() {
     for (int i = 0; i < 11; i++) {
       lampStates[i] = turnOn;
       digitalWrite(lampPins[i], turnOn ? HIGH : LOW);
+      if (turnOn) lampOnTimes[i] = millis();
     }
     server.send(200, "text/plain", turnOn ? "All lamps lit" : "All lamps off");
     Serial.println(turnOn ? "ALL ON" : "ALL OFF");
@@ -143,6 +146,7 @@ void handleLamp() {
     int idx = id - 1;
     lampStates[idx] = turnOn;
     digitalWrite(lampPins[idx], turnOn ? HIGH : LOW);
+    if (turnOn) lampOnTimes[idx] = millis();
     server.send(200, "text/plain", "Oil Lamp " + String(id) + (turnOn ? " lit" : " off"));
     Serial.println("Oil Lamp " + String(id) + (turnOn ? " lit" : " off"));
   }
@@ -188,6 +192,16 @@ void setup() {
 
 void loop() {
   server.handleClient();
+
+  // Auto-off logic (Fire time safety limit)
+  unsigned long currentMillis = millis();
+  for (int i = 0; i < 11; i++) {
+    if (lampStates[i] && (currentMillis - lampOnTimes[i] >= FIRE_TIME_MS)) {
+      lampStates[i] = false;
+      digitalWrite(lampPins[i], LOW);
+      Serial.println("Auto-off Lamp " + String(i + 1) + " (5s fire time limit)");
+    }
+  }
 }
 ```
 
