@@ -19,7 +19,7 @@ interface SpeechRecognitionConstructor { new (): SpeechRecognition; }
 
 /* ── Types ── */
 interface LampState { id: number; on: boolean; loading: boolean; error: boolean; }
-interface ParsedCommand { action: "on" | "off"; id: number | "all"; }
+interface ParsedCommand { action: "on"; id: number | "all"; }
 interface Toast { id: number; type: "error" | "success"; message: string; }
 
 /* ── Number word map ── */
@@ -33,10 +33,10 @@ const WORD_TO_NUM: Record<string, number> = {
 function parseCommand(text: string): ParsedCommand | null {
   const t = text.toLowerCase().trim();
   const normalizedText = t.replace(/[.,!?]/g, "");
-  let action: "on" | "off" | null = null;
-  if (/\b(turn\s*off|switch\s*off|shut\s*off|off|dim|kill|disable|deactivate|close|dark|darken|unlight|extinguish)\b/.test(t)) action = "off";
-  else if (/\b(turn\s*on|switch\s*on|light|lights|on|enable|activate|open|bright|brighten|illuminate|fire|ignite)\b/.test(t)) action = "on";
-  if (!action) return null;
+  
+  if (!/\b(turn\s*on|switch\s*on|light|lights|on|enable|activate|open|bright|brighten|illuminate|fire|ignite)\b/.test(t)) return null;
+  
+  const action = "on";
   if (/\b(all|every|everything|each)\b/.test(t)) return { action, id: "all" };
   const digitMatch = t.match(/\b(1[01]|[1-9])\b/);
   if (digitMatch) { const num = parseInt(digitMatch[1], 10); if (num >= 1 && num <= 11) return { action, id: num }; }
@@ -110,13 +110,6 @@ export default function GuestControl() {
       setLamps((prev) => prev.map((l) => (lampId === "all" || l.id === lampId) ? { ...l, loading: false } : l));
       setConnectionStatus("connected");
       addToast("success", `Lamp ${lampId === "all" ? "ALL" : lampId} → ${state.toUpperCase()}`);
-
-      // Auto-turn off after 5 seconds (fire time) to prevent nichrome wire burnout
-      if (state === "on") {
-        setTimeout(() => {
-          sendCommand(lampId, "off");
-        }, 5000);
-      }
     } catch {
       setLamps((prev) => prev.map((l) => (lampId === "all" || l.id === lampId) ? { ...l, on: state !== "on", loading: false, error: true } : l));
       setConnectionStatus("disconnected");

@@ -84,13 +84,6 @@ export default function LampControl() {
       setLamps((prev) => prev.map((l) => (lampId === "all" || l.id === lampId) ? { ...l, loading: false } : l));
       setConnectionStatus("connected");
       addToast("success", `Lamp ${lampId === "all" ? "ALL" : lampId} → ${state.toUpperCase()}`);
-
-      // Auto-turn off after 5 seconds (fire time) to prevent nichrome wire burnout
-      if (state === "on") {
-        setTimeout(() => {
-          sendCommand(lampId, "off");
-        }, 5000);
-      }
     } catch {
       setLamps((prev) => prev.map((l) => (lampId === "all" || l.id === lampId) ? { ...l, on: state !== "on", loading: false, error: true } : l));
       setConnectionStatus("disconnected");
@@ -121,9 +114,8 @@ export default function LampControl() {
     checkConnection();
   }, [esp32Ip]);
 
-  const toggleLamp = useCallback((id: number) => { const lamp = lamps.find((l) => l.id === id); if (lamp) sendCommand(id, lamp.on ? "off" : "on"); }, [lamps, sendCommand]);
+  const toggleLamp = useCallback((id: number) => { const lamp = lamps.find((l) => l.id === id); if (lamp && !lamp.on) sendCommand(id, "on"); }, [lamps, sendCommand]);
   const allOn = useCallback(() => sendCommand("all", "on"), [sendCommand]);
-  const allOff = useCallback(() => sendCommand("all", "off"), [sendCommand]);
   const onCount = lamps.filter((l) => l.on).length;
 
   const openIpEditor = useCallback(() => { setIpDraft(esp32Ip); setEditingIp(true); }, [esp32Ip]);
@@ -298,8 +290,7 @@ export default function LampControl() {
               </div>
 
               <div className="sidebar-btn-row">
-                <button id="all-on-btn" className="btn-action btn-all-on btn-sm" onClick={allOn}><BoltIcon /> All ON</button>
-                <button id="all-off-btn" className="btn-action btn-all-off btn-sm" onClick={allOff}>All OFF</button>
+                <button id="all-on-btn" className="btn-action btn-all-on btn-sm" onClick={allOn} style={{ width: "100%" }}><BoltIcon /> All ON</button>
               </div>
             </div>
 
@@ -312,10 +303,7 @@ export default function LampControl() {
               <div className="reference-list">
                 <span>&quot;Light pahan three&quot; → <b>ON #3</b></span>
                 <span>&quot;Turn on pahan 7&quot; → <b>ON #7</b></span>
-                <span>&quot;Turn off pahan five&quot; → <b>OFF #5</b></span>
                 <span>&quot;Light all pahans&quot; → <b>ON ALL</b></span>
-                <span>&quot;Turn off all&quot; → <b>OFF ALL</b></span>
-                <span>&quot;Switch off eleven&quot; → <b>OFF #11</b></span>
               </div>
             </details>
           </aside>
